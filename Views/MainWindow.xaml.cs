@@ -1,7 +1,7 @@
-﻿using System.Windows;
+using System.Windows;
 using WfmApp.Presentation.ViewModels;
 
-namespace WfmApp.Presentation;
+namespace WfmApp.Presentation.Views;
 
 public partial class MainWindow : Window
 {

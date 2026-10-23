@@ -6,6 +6,7 @@ using WfmApp.Presentation.Application.UseCases.CreateShift;
 using WfmApp.Presentation.Infrastructure.Persistence;
 using WfmApp.Presentation.Infrastructure.Persistence.Repositories;
 using WfmApp.Presentation.ViewModels;
+using WfmApp.Presentation.Views;
 
 namespace WfmApp.Presentation;
 
