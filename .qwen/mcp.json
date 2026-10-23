@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "wfm-memory": {
+      "command": "D:/WFM/McpServerWFM/publish/McpServerWFM.exe",
+      "args": []
+    }
+  }
+}

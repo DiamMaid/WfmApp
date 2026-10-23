@@ -1,0 +1,12 @@
+# Multi-Agent Workflow Orchestration
+
+## Roles:
+1. @Architect (qwen3.8-max): Controls the pipeline, writes domain models and architectural decisions to MCP wfm-memory.
+2. @DomainLead (deepseek-v4-pro): Implements Domain & Application layers.
+3. @InfraEngineer (glm-5.3): Implements EF Core, PostgreSQL mappings, and Repositories.
+4. @WpfEngineer (deepseek-v4.1-flash): Implements XAML, ViewModels, and UI wiring.
+
+## Autonomous Execution Rules:
+- Before writing code, agents MUST retrieve specifications from MCP wfm-memory via GetMemory.
+- When an agent completes its milestone, it must save the state into MCP wfm-memory and automatically invoke the next agent in sequence via sub-agent call.
+- The pipeline execution order is: @Architect -> @DomainLead -> @InfraEngineer -> @WpfEngineer.
