@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/WfmApp.Api/WfmApp.Api.csproj" />
+    <Project Path="src/WfmApp.Application/WfmApp.Application.csproj" />
+    <Project Path="src/WfmApp.Domain/WfmApp.Domain.csproj" />
+    <Project Path="src/WfmApp.Infrastructure/WfmApp.Infrastructure.csproj" />
+    <Project Path="src/WfmApp.Presentation/WfmApp.Presentation.csproj" />
+  </Folder>
+</Solution>
