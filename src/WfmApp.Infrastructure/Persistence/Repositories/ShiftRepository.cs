@@ -59,6 +59,38 @@ public class ShiftRepository : IShiftRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<WarehouseShift>> GetByHubAndDateAsync(
+        HubId hubId,
+        DateTimeOffset date,
+        CancellationToken ct = default)
+    {
+        var dayStart = date.Date;
+        var dayEnd = dayStart.AddDays(1);
+
+        return await _context.WarehouseShifts
+            .Where(s => s.HubId == hubId
+                        && s.Planned.Start < dayEnd
+                        && s.Planned.End > dayStart)
+            .OrderBy(s => s.Planned.Start)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<WarehouseShift>> GetByEmployeeAndDateAsync(
+        EmployeeId employeeId,
+        DateTimeOffset date,
+        CancellationToken ct = default)
+    {
+        var dayStart = date.Date;
+        var dayEnd = dayStart.AddDays(1);
+
+        return await _context.WarehouseShifts
+            .Where(s => s.EmployeeId == employeeId
+                        && s.Planned.Start < dayEnd
+                        && s.Planned.End > dayStart)
+            .OrderBy(s => s.Planned.Start)
+            .ToListAsync(ct);
+    }
+
     public async Task<WarehouseShift?> GetByAccessControlEventIdAsync(
         string accessControlEventId,
         CancellationToken ct = default)

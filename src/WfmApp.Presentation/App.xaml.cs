@@ -29,7 +29,7 @@ public partial class App : global::System.Windows.Application
         services.AddScoped<IHubRepository, HubRepository>();
         services.AddScoped<IShiftOverlapChecker, ShiftOverlapChecker>();
         services.AddScoped<CreateShiftUseCase>();
-        services.AddScoped<ShiftPlanningViewModel>();
+        services.AddScoped<ShiftDashboardViewModel>();
         services.AddScoped<MainWindow>();
 
         _serviceProvider = services.BuildServiceProvider();
