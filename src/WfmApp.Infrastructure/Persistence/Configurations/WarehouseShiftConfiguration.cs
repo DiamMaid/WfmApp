@@ -98,10 +98,6 @@ public class WarehouseShiftConfiguration : IEntityTypeConfiguration<WarehouseShi
 
         builder.Ignore(s => s.WorkedDuration);
 
-        builder.HasIndex(s => new { s.EmployeeId, s.Planned.Start })
-            .HasDatabaseName("ix_warehouse_shifts_employee_start")
-            .IsDescending(false, true);
-
         builder.HasIndex(s => new { s.HubId, s.Status })
             .HasDatabaseName("ix_warehouse_shifts_hub_status");
 
