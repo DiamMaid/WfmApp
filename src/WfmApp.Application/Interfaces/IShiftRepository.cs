@@ -1,12 +1,13 @@
 using WfmApp.Domain.Common;
 using WfmApp.Domain.Entities;
-using WfmApp.Domain.ValueObjects;
 
 namespace WfmApp.Application.Interfaces;
 
 public interface IShiftRepository
 {
-    Task AddAsync(WorkShift workShift, CancellationToken ct = default);
-    Task<WorkShift?> GetByIdAsync(WorkShiftId id, CancellationToken ct = default);
-    Task<bool> HasOverlapAsync(EmployeeId employeeId, ShiftInterval interval, CancellationToken ct = default);
+    Task AddAsync(WarehouseShift shift, CancellationToken ct = default);
+    Task<WarehouseShift?> GetByIdAsync(WarehouseShiftId id, CancellationToken ct = default);
+    Task<WarehouseShift?> GetPlannedCoveringAsync(EmployeeId employeeId, DateTimeOffset at, CancellationToken ct = default);
+    Task<WarehouseShift?> GetActiveByEmployeeIdAsync(EmployeeId employeeId, CancellationToken ct = default);
+    Task<IReadOnlyList<WarehouseShift>> GetActiveByHubAsync(HubId hubId, DateTimeOffset at, CancellationToken ct = default);
 }
