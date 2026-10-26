@@ -6,19 +6,27 @@ public sealed record ShiftInterval
     private static readonly TimeSpan BreakRequiredThreshold = TimeSpan.FromHours(4);
     private static readonly TimeSpan MinBreakDuration = TimeSpan.FromMinutes(45);
 
-    private ShiftInterval(DateTimeOffset start, DateTimeOffset end, ShiftBreak? shiftBreak)
+    private DateTimeOffset _start;
+    private DateTimeOffset _end;
+    private ShiftBreak? _break;
+
+    private ShiftInterval()
     {
-        Start = start;
-        End = end;
-        Break = shiftBreak;
     }
 
-    public DateTimeOffset Start { get; }
-    public DateTimeOffset End { get; }
-    public ShiftBreak? Break { get; }
+    private ShiftInterval(DateTimeOffset start, DateTimeOffset end, ShiftBreak? shiftBreak)
+    {
+        _start = start;
+        _end = end;
+        _break = shiftBreak;
+    }
 
-    public TimeSpan Elapsed => End - Start;
-    public TimeSpan Worked => Elapsed - (Break?.Duration ?? TimeSpan.Zero);
+    public DateTimeOffset Start => _start;
+    public DateTimeOffset End => _end;
+    public ShiftBreak? Break => _break;
+
+    public TimeSpan Elapsed => _end - _start;
+    public TimeSpan Worked => Elapsed - (_break?.Duration ?? TimeSpan.Zero);
 
     public static ShiftInterval Create(DateTimeOffset start, DateTimeOffset end, ShiftBreak? shiftBreak = null)
     {
