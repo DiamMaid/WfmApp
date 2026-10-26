@@ -25,6 +25,9 @@ public partial class App : global::System.Windows.Application
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IShiftRepository, ShiftRepository>();
+        services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+        services.AddScoped<IHubRepository, HubRepository>();
+        services.AddScoped<IShiftOverlapChecker, ShiftOverlapChecker>();
         services.AddScoped<CreateShiftUseCase>();
         services.AddScoped<ShiftPlanningViewModel>();
         services.AddScoped<MainWindow>();

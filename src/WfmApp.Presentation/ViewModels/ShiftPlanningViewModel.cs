@@ -1,5 +1,6 @@
 using WfmApp.Application.UseCases.CreateShift;
 using WfmApp.Domain.Common;
+using WfmApp.Domain.Enums;
 using WfmApp.Domain.ValueObjects;
 
 namespace WfmApp.Presentation.ViewModels;
@@ -17,7 +18,7 @@ public sealed class ShiftPlanningViewModel : ViewModelBase
     {
         _useCase = useCase;
         _start = RoundUpToNextHour(DateTimeOffset.Now);
-        _end = _start.AddHours(8);
+        _end = _start.AddHours(4);
         SaveCommand = new AsyncRelayCommand(SaveAsync);
     }
 
@@ -78,12 +79,20 @@ public sealed class ShiftPlanningViewModel : ViewModelBase
         var command = new CreateShiftCommand
         {
             EmployeeId = new EmployeeId(employeeGuid),
+            Zone = WorkZone.Packing,
             Start = interval.Start,
             End = interval.End
         };
 
-        var shiftId = await _useCase.ExecuteAsync(command);
-        StatusMessage = $"Смена создана: {shiftId.Value}";
+        try
+        {
+            var shiftId = await _useCase.ExecuteAsync(command);
+            StatusMessage = $"Смена создана: {shiftId.Value}";
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = ex.Message;
+        }
     }
 
     private static DateTimeOffset RoundUpToNextHour(DateTimeOffset now)
