@@ -22,6 +22,11 @@ public sealed class CheckInUseCase
 
     public async Task<WarehouseShiftId> ExecuteAsync(CheckInCommand command, CancellationToken ct = default)
     {
+        var replayed = await _shifts.GetByAccessControlEventIdAsync(command.AccessControlEventId, ct);
+
+        if (replayed is not null)
+            return replayed.Id;
+
         var employee = await _employees.GetByIdAsync(command.EmployeeId, ct);
 
         if (employee is null)

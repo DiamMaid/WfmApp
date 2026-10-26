@@ -10,4 +10,5 @@ public interface IShiftRepository
     Task<WarehouseShift?> GetPlannedCoveringAsync(EmployeeId employeeId, DateTimeOffset at, CancellationToken ct = default);
     Task<WarehouseShift?> GetActiveByEmployeeIdAsync(EmployeeId employeeId, CancellationToken ct = default);
     Task<IReadOnlyList<WarehouseShift>> GetActiveByHubAsync(HubId hubId, DateTimeOffset at, CancellationToken ct = default);
+    Task<WarehouseShift?> GetByAccessControlEventIdAsync(string accessControlEventId, CancellationToken ct = default);
 }

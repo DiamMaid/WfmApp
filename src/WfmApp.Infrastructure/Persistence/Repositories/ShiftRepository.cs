@@ -58,4 +58,13 @@ public class ShiftRepository : IShiftRepository
             .OrderBy(s => s.Planned.Start)
             .ToListAsync(ct);
     }
+
+    public async Task<WarehouseShift?> GetByAccessControlEventIdAsync(
+        string accessControlEventId,
+        CancellationToken ct = default)
+    {
+        return await _context.WarehouseShifts.FirstOrDefaultAsync(
+            s => s.AccessControlEventId == accessControlEventId,
+            ct);
+    }
 }
