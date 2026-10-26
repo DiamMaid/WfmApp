@@ -9,7 +9,9 @@ public class WfmDbContext : DbContext
     {
     }
 
-    public DbSet<WorkShift> WorkShifts => Set<WorkShift>();
+    public DbSet<WarehouseHub> WarehouseHubs => Set<WarehouseHub>();
+    public DbSet<WarehouseEmployee> WarehouseEmployees => Set<WarehouseEmployee>();
+    public DbSet<WarehouseShift> WarehouseShifts => Set<WarehouseShift>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
