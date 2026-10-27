@@ -65,6 +65,17 @@ public sealed class ShiftsController : ControllerBase
         return Ok(ToDto(await LoadAsync(new WarehouseShiftId(shiftId), ct)));
     }
 
+    [HttpGet("/api/v1/hubs/{hubId:guid}/shifts")]
+    public async Task<ActionResult<IReadOnlyList<ShiftDto>>> GetByHubAndDate(
+        Guid hubId,
+        [FromQuery] DateTimeOffset date,
+        CancellationToken ct)
+    {
+        var shifts = await _shifts.GetByHubAndDateAsync(new HubId(hubId), date, ct);
+
+        return Ok(shifts.Select(ToDto).ToList());
+    }
+
     [HttpPost("check-in")]
     public async Task<ActionResult<ShiftDto>> CheckIn(
         [FromBody] CheckInRequest request,
