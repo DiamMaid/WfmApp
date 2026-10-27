@@ -64,7 +64,7 @@ public class ShiftRepository : IShiftRepository
         DateTimeOffset date,
         CancellationToken ct = default)
     {
-        var dayStart = date.Date;
+        var dayStart = new DateTimeOffset(date.Year, date.Month, date.Day, 0, 0, 0, date.Offset).ToUniversalTime();
         var dayEnd = dayStart.AddDays(1);
 
         return await _context.WarehouseShifts
@@ -80,7 +80,7 @@ public class ShiftRepository : IShiftRepository
         DateTimeOffset date,
         CancellationToken ct = default)
     {
-        var dayStart = date.Date;
+        var dayStart = new DateTimeOffset(date.Year, date.Month, date.Day, 0, 0, 0, date.Offset).ToUniversalTime();
         var dayEnd = dayStart.AddDays(1);
 
         return await _context.WarehouseShifts

@@ -197,7 +197,7 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
         try
         {
             var day = DayStart();
-            var now = DateTimeOffset.Now;
+            var now = DateTimeOffset.UtcNow;
             var shifts = await _shifts.GetByHubAndDateAsync(_selectedHub.Id, day, CancellationToken.None);
             var employees = await _employees.GetByHubAsync(_selectedHub.Id);
             var byId = employees.ToDictionary(e => e.Id);
@@ -256,8 +256,8 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
         }
 
         var day = DayStart();
-        var start = _isNightPreset ? day.AddHours(20) : day.AddHours(8);
-        var end = _isNightPreset ? day.AddDays(1).AddHours(8) : day.AddHours(20);
+        var start = (_isNightPreset ? day.AddHours(20) : day.AddHours(8)).ToUniversalTime();
+        var end = (_isNightPreset ? day.AddDays(1).AddHours(8) : day.AddHours(20)).ToUniversalTime();
 
         try
         {
@@ -299,7 +299,7 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
             {
                 EmployeeId = shift.EmployeeId,
                 HubId = shift.HubId,
-                OccurredAt = DateTimeOffset.Now,
+                OccurredAt = DateTimeOffset.UtcNow,
                 AccessControlEventId = $"MANUAL-{Guid.NewGuid():N}"
             };
 
@@ -321,7 +321,7 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
             var command = new CheckOutCommand
             {
                 ShiftId = shift.Id,
-                OccurredAt = DateTimeOffset.Now
+                OccurredAt = DateTimeOffset.UtcNow
             };
 
             await _checkOut.ExecuteAsync(command);
