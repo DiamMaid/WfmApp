@@ -11,11 +11,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.13" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WfmApp.Application\WfmApp.Application.csproj" />
+    <ProjectReference Include="..\WfmApp.Contracts\WfmApp.Contracts.csproj" />
     <ProjectReference Include="..\WfmApp.Infrastructure\WfmApp.Infrastructure.csproj" />
   </ItemGroup>
 
