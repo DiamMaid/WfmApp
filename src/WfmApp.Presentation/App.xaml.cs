@@ -1,12 +1,6 @@
 using System.Windows;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using WfmApp.Application.Interfaces;
-using WfmApp.Application.UseCases.CheckIn;
-using WfmApp.Application.UseCases.CheckOut;
-using WfmApp.Application.UseCases.CreateShift;
-using WfmApp.Infrastructure.Persistence;
-using WfmApp.Infrastructure.Persistence.Repositories;
+using WfmApp.Presentation.Api;
 using WfmApp.Presentation.ViewModels;
 using WfmApp.Presentation.Views;
 
@@ -22,17 +16,11 @@ public partial class App : global::System.Windows.Application
         base.OnStartup(e);
 
         var services = new ServiceCollection();
-        services.AddDbContext<WfmDbContext>(options =>
-            options.UseNpgsql(WfmDatabase.ConnectionString));
 
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped<IShiftRepository, ShiftRepository>();
-        services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-        services.AddScoped<IHubRepository, HubRepository>();
-        services.AddScoped<IShiftOverlapChecker, ShiftOverlapChecker>();
-        services.AddScoped<CreateShiftUseCase>();
-        services.AddScoped<CheckInUseCase>();
-        services.AddScoped<CheckOutUseCase>();
+        services.AddHttpClient<IWfmApiClient, WfmApiClient>(client =>
+            client.BaseAddress = new Uri(
+                Environment.GetEnvironmentVariable("WFM_API_URL") ?? "http://localhost:5080/"));
+
         services.AddScoped<ShiftDashboardViewModel>();
         services.AddScoped<MainWindow>();
 

@@ -1,25 +1,18 @@
 using System.Collections.ObjectModel;
-using WfmApp.Application.Interfaces;
-using WfmApp.Application.UseCases.CheckIn;
-using WfmApp.Application.UseCases.CheckOut;
-using WfmApp.Application.UseCases.CreateShift;
+using WfmApp.Contracts;
 using WfmApp.Domain.Common;
-using WfmApp.Domain.Entities;
 using WfmApp.Domain.Enums;
+using WfmApp.Presentation.Api;
 
 namespace WfmApp.Presentation.ViewModels;
 
 public sealed class ShiftDashboardViewModel : ViewModelBase
 {
     private static readonly TimeSpan LateGrace = TimeSpan.FromMinutes(15);
-    private static readonly TimeSpan BreakDuration = TimeSpan.FromMinutes(45);
+    private const int BreakMinutes = 45;
 
-    private readonly IHubRepository _hubs;
-    private readonly IEmployeeRepository _employees;
-    private readonly IShiftRepository _shifts;
-    private readonly CreateShiftUseCase _createShift;
-    private readonly CheckInUseCase _checkIn;
-    private readonly CheckOutUseCase _checkOut;
+    private readonly IWfmApiClient _client;
+    private CancellationTokenSource? _loadCts;
 
     private HubOption? _selectedHub;
     private WorkZone _selectedZone = WorkZone.Receiving;
@@ -33,20 +26,9 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
     private int _receivingCount;
     private int _packingCount;
 
-    public ShiftDashboardViewModel(
-        IHubRepository hubs,
-        IEmployeeRepository employees,
-        IShiftRepository shifts,
-        CreateShiftUseCase createShift,
-        CheckInUseCase checkIn,
-        CheckOutUseCase checkOut)
+    public ShiftDashboardViewModel(IWfmApiClient client)
     {
-        _hubs = hubs;
-        _employees = employees;
-        _shifts = shifts;
-        _createShift = createShift;
-        _checkIn = checkIn;
-        _checkOut = checkOut;
+        _client = client;
 
         Zones = Enum.GetValues<WorkZone>();
         ReloadCommand = new AsyncRelayCommand(ReloadShiftsAsync);
@@ -136,35 +118,51 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
         private set => SetProperty(ref _packingCount, value);
     }
 
+    private CancellationToken BeginLoad()
+    {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = new CancellationTokenSource();
+
+        return _loadCts.Token;
+    }
+
     private async Task LoadHubsAsync()
     {
+        var ct = BeginLoad();
+
         try
         {
-            var hubs = await _hubs.GetActiveAsync();
+            var hubs = await _client.GetHubsAsync(ct);
             Hubs.Clear();
 
             foreach (var hub in hubs)
-                Hubs.Add(new HubOption(hub.Id, $"{hub.Code} ({hub.Location.Site})"));
+                Hubs.Add(new HubOption(new HubId(hub.Id), $"{hub.Code} ({hub.Site})"));
 
-            DbStatusText = "PostgreSQL: подключено";
+            DbStatusText = "API: подключено";
 
             if (Hubs.Count > 0)
                 SelectedHub = Hubs[0];
         }
+        catch (OperationCanceledException)
+        {
+        }
         catch (Exception ex)
         {
-            DbStatusText = "PostgreSQL: ошибка";
+            DbStatusText = "API: ошибка";
             ErrorMessage = ex.Message;
         }
     }
 
     private async Task LoadEmployeesAndShiftsAsync()
     {
-        await LoadEmployeesAsync();
-        await ReloadShiftsAsync();
+        var ct = BeginLoad();
+
+        await LoadEmployeesAsync(ct);
+        await ReloadShiftsAsync(ct);
     }
 
-    private async Task LoadEmployeesAsync()
+    private async Task LoadEmployeesAsync(CancellationToken ct)
     {
         Employees.Clear();
 
@@ -173,21 +171,26 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
 
         try
         {
-            var employees = await _employees.GetByHubAsync(_selectedHub.Id);
+            var employees = await _client.GetEmployeesAsync(_selectedHub.Id.Value, ct);
 
             foreach (var employee in employees)
-                Employees.Add(new EmployeeOption(employee.Id, $"{employee.StaffId} — {employee.FullName}"));
+                Employees.Add(new EmployeeOption(new EmployeeId(employee.Id), $"{employee.StaffId} — {employee.FullName}"));
 
-            DbStatusText = "PostgreSQL: подключено";
+            DbStatusText = "API: подключено";
+        }
+        catch (OperationCanceledException)
+        {
         }
         catch (Exception ex)
         {
-            DbStatusText = "PostgreSQL: ошибка";
+            DbStatusText = "API: ошибка";
             ErrorMessage = ex.Message;
         }
     }
 
-    private async Task ReloadShiftsAsync()
+    private Task ReloadShiftsAsync() => ReloadShiftsAsync(BeginLoad());
+
+    private async Task ReloadShiftsAsync(CancellationToken ct)
     {
         Shifts.Clear();
 
@@ -198,8 +201,8 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
         {
             var day = DayStart();
             var now = DateTimeOffset.UtcNow;
-            var shifts = await _shifts.GetByHubAndDateAsync(_selectedHub.Id, day, CancellationToken.None);
-            var employees = await _employees.GetByHubAsync(_selectedHub.Id);
+            var shifts = await _client.GetShiftsAsync(_selectedHub.Id.Value, day, ct);
+            var employees = await _client.GetEmployeesAsync(_selectedHub.Id.Value, ct);
             var byId = employees.ToDictionary(e => e.Id);
 
             foreach (var shift in shifts)
@@ -207,19 +210,17 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
                 if (!byId.TryGetValue(shift.EmployeeId, out var employee))
                     continue;
 
-                var attendance = ToAttendance(shift, now);
-
                 Shifts.Add(new ShiftRowViewModel(
-                    shift.Id,
-                    employee.Id,
-                    shift.HubId,
+                    new WarehouseShiftId(shift.ShiftId),
+                    new EmployeeId(shift.EmployeeId),
+                    new HubId(shift.HubId),
                     employee.StaffId,
                     employee.FullName,
                     RoleText(employee.Role),
                     ZoneText(shift.Zone),
-                    shift.Planned.Start,
-                    shift.Planned.End,
-                    attendance,
+                    shift.PlannedStart,
+                    shift.PlannedEnd,
+                    ToAttendance(shift, now),
                     shift.Status == ShiftStatus.Planned,
                     shift.Status == ShiftStatus.Active,
                     new AsyncRelayCommand(() => CheckInAsync(shift)),
@@ -229,11 +230,14 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
             TotalOnShift = Shifts.Count(r => r.Attendance == AttendanceStatus.OnShift || r.Attendance == AttendanceStatus.Late);
             ReceivingCount = Shifts.Count(r => r.Zone == ZoneText(WorkZone.Receiving) && r.Attendance != AttendanceStatus.Finished);
             PackingCount = Shifts.Count(r => r.Zone == ZoneText(WorkZone.Packing) && r.Attendance != AttendanceStatus.Finished);
-            DbStatusText = "PostgreSQL: подключено";
+            DbStatusText = "API: подключено";
+        }
+        catch (OperationCanceledException)
+        {
         }
         catch (Exception ex)
         {
-            DbStatusText = "PostgreSQL: ошибка";
+            DbStatusText = "API: ошибка";
             ErrorMessage = ex.Message;
         }
     }
@@ -255,33 +259,37 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
             return;
         }
 
+        var ct = BeginLoad();
         var day = DayStart();
         var start = (_isNightPreset ? day.AddHours(20) : day.AddHours(8)).ToUniversalTime();
         var end = (_isNightPreset ? day.AddDays(1).AddHours(8) : day.AddHours(20)).ToUniversalTime();
 
         try
         {
-            var existing = await _shifts.GetByEmployeeAndDateAsync(_selectedEmployee.Id, start);
+            var dayShifts = await _client.GetShiftsAsync(_selectedHub.Id.Value, start, ct);
 
-            if (existing.Count > 0)
+            if (dayShifts.Any(s => s.EmployeeId == _selectedEmployee.Id.Value))
             {
                 ErrorMessage = "Сотрудник уже назначен на смену в эту дату.";
                 return;
             }
 
-            var command = new CreateShiftCommand
+            var request = new CreateShiftRequest
             {
-                EmployeeId = _selectedEmployee.Id,
+                EmployeeId = _selectedEmployee.Id.Value,
                 Zone = _selectedZone,
                 Start = start,
                 End = end,
                 BreakStart = start.AddHours(5),
-                BreakDuration = BreakDuration
+                BreakMinutes = BreakMinutes
             };
 
-            var shiftId = await _createShift.ExecuteAsync(command);
-            StatusMessage = $"Смена назначена: {shiftId.Value}";
-            await ReloadShiftsAsync();
+            var created = await _client.CreateShiftAsync(request, ct);
+            StatusMessage = $"Смена назначена: {created.ShiftId}";
+            await ReloadShiftsAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
@@ -289,13 +297,14 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
         }
     }
 
-    private async Task CheckInAsync(WarehouseShift shift)
+    private async Task CheckInAsync(ShiftDto shift)
     {
         ErrorMessage = null;
+        var ct = BeginLoad();
 
         try
         {
-            var command = new CheckInCommand
+            var request = new CheckInRequest
             {
                 EmployeeId = shift.EmployeeId,
                 HubId = shift.HubId,
@@ -303,31 +312,38 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
                 AccessControlEventId = $"MANUAL-{Guid.NewGuid():N}"
             };
 
-            await _checkIn.ExecuteAsync(command);
-            await ReloadShiftsAsync();
+            await _client.CheckInAsync(request, ct);
+            await ReloadShiftsAsync(ct);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or Application.Common.EntityNotFoundException)
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
             ErrorMessage = ex.Message;
         }
     }
 
-    private async Task CheckOutAsync(WarehouseShift shift)
+    private async Task CheckOutAsync(ShiftDto shift)
     {
         ErrorMessage = null;
+        var ct = BeginLoad();
 
         try
         {
-            var command = new CheckOutCommand
+            var request = new CheckOutRequest
             {
-                ShiftId = shift.Id,
+                ShiftId = shift.ShiftId,
                 OccurredAt = DateTimeOffset.UtcNow
             };
 
-            await _checkOut.ExecuteAsync(command);
-            await ReloadShiftsAsync();
+            await _client.CheckOutAsync(request, ct);
+            await ReloadShiftsAsync(ct);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or Application.Common.EntityNotFoundException)
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
             ErrorMessage = ex.Message;
         }
@@ -335,17 +351,17 @@ public sealed class ShiftDashboardViewModel : ViewModelBase
 
     private DateTimeOffset DayStart() => new DateTimeOffset(_selectedDate);
 
-    private static AttendanceStatus ToAttendance(WarehouseShift shift, DateTimeOffset now)
+    private static AttendanceStatus ToAttendance(ShiftDto shift, DateTimeOffset now)
     {
         if (shift.Status == ShiftStatus.Closed)
             return AttendanceStatus.Finished;
 
         if (shift.Status == ShiftStatus.Active)
-            return shift.CheckedInAt is { } checkedIn && checkedIn > shift.Planned.Start + LateGrace
+            return shift.CheckedInAt is { } checkedIn && checkedIn > shift.PlannedStart + LateGrace
                 ? AttendanceStatus.Late
                 : AttendanceStatus.OnShift;
 
-        return now > shift.Planned.Start + LateGrace ? AttendanceStatus.Late : AttendanceStatus.Planned;
+        return now > shift.PlannedStart + LateGrace ? AttendanceStatus.Late : AttendanceStatus.Planned;
     }
 
     private static string RoleText(Role role) => role switch
