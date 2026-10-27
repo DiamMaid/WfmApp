@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WfmApp.Application\WfmApp.Application.csproj" />
+    <ProjectReference Include="..\WfmApp.Contracts\WfmApp.Contracts.csproj" />
     <ProjectReference Include="..\WfmApp.Infrastructure\WfmApp.Infrastructure.csproj" />
   </ItemGroup>
 

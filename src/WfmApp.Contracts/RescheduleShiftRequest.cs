@@ -1,11 +1,7 @@
-using WfmApp.Domain.Enums;
+namespace WfmApp.Contracts;
 
-namespace WfmApp.Api.Contracts;
-
-public sealed class CreateShiftRequest
+public sealed class RescheduleShiftRequest
 {
-    public required Guid EmployeeId { get; init; }
-    public required WorkZone Zone { get; init; }
     public required DateTimeOffset Start { get; init; }
     public required DateTimeOffset End { get; init; }
     public DateTimeOffset? BreakStart { get; init; }

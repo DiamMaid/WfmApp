@@ -1,4 +1,4 @@
-namespace WfmApp.Api.Contracts;
+namespace WfmApp.Contracts;
 
 public sealed record HubDto(
     Guid Id,

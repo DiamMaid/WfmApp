@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using WfmApp.Api.Contracts;
+using WfmApp.Contracts;
 using WfmApp.Application.Interfaces;
 using WfmApp.Domain.Common;
 

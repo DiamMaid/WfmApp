@@ -1,6 +1,6 @@
 using WfmApp.Domain.Enums;
 
-namespace WfmApp.Api.Contracts;
+namespace WfmApp.Contracts;
 
 public sealed record EmployeeDto(
     Guid Id,
