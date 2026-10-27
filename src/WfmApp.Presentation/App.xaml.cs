@@ -2,6 +2,8 @@ using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using WfmApp.Application.Interfaces;
+using WfmApp.Application.UseCases.CheckIn;
+using WfmApp.Application.UseCases.CheckOut;
 using WfmApp.Application.UseCases.CreateShift;
 using WfmApp.Infrastructure.Persistence;
 using WfmApp.Infrastructure.Persistence.Repositories;
@@ -29,6 +31,8 @@ public partial class App : global::System.Windows.Application
         services.AddScoped<IHubRepository, HubRepository>();
         services.AddScoped<IShiftOverlapChecker, ShiftOverlapChecker>();
         services.AddScoped<CreateShiftUseCase>();
+        services.AddScoped<CheckInUseCase>();
+        services.AddScoped<CheckOutUseCase>();
         services.AddScoped<ShiftDashboardViewModel>();
         services.AddScoped<MainWindow>();
 
